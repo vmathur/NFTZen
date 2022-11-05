@@ -1,25 +1,143 @@
-import logo from './logo.svg';
 import './App.css';
+import { useState, useEffect } from "react";
+import { Magic } from "magic-sdk";
+import { ConnectExtension } from "@magic-ext/connect";
+import Web3 from "web3";
+import {abi} from "./abi"
+
+const magic = new Magic("pk_live_73AAE8A5F81B1CF3", {
+  network: "goerli",
+  locale: "en_US",
+  extensions: [new ConnectExtension()]
+});
+const web3 = new Web3(magic.rpcProvider);
+
+const contractAddress ='0x63f8bCD03fBDD1cEB92B8469A91de8996306Dd74'
+console.log(magic)
+console.log(magic.rpcProvider)
 
 function App() {
+  const [account, setAccount] = useState(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [timestamp, setTimestamp] = useState('loading...');
+  const maxFood = 200;
+  const foodConsumedPerSecond = 2;
+
+  useEffect(() => {
+    console.log('mounted')
+    getTimestamp();
+  },[]);
+
+  const getTimestamp = async () => {
+    console.log('about to get')
+    const contract = new web3.eth.Contract(abi, contractAddress);
+    contract.methods.lastUpdated().call().then(setTimestamp)
+    console.log('updated')
+  }
+
+  const updateTimestamp = async () => {
+    console.log('calling contract')
+    setIsUpdating(true)
+    const contract = new web3.eth.Contract(abi, contractAddress);
+    const receipt = await contract.methods.update().send({ from: account });
+    console.log(receipt)
+    setIsUpdating(false)
+    getTimestamp();
+  };
+ 
+  const login = async () => {
+    web3.eth
+      .getAccounts()
+      .then((accounts) => {
+        console.log(accounts)
+        setAccount(accounts?.[0]);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  };
+
+  const showWallet = () => {
+    magic.connect.showWallet().catch((e) => {
+      console.log(e);
+    });
+  };
+
+  const disconnect = async () => {
+    await magic.connect.disconnect().catch((e) => {
+      console.log(e);
+    });
+    setAccount(null);
+  };
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <b>
+        NFTZen
+      </b>
+      <div>
+      {!account && (
+        <button onClick={login} className="button-row">
+          Sign In
+        </button>
+      )}
+
+      {account && (
+        <>
+          <button onClick={showWallet} className="button-row">
+            Show Wallet
+          </button>
+          {!isUpdating && ( 
+          <button onClick={updateTimestamp} className="button-row">
+            Feed
+          </button>)}
+          <div className="button-row">{utcToDate(timestamp)}</div>
+          <div className="button-row">{'max food: '+ maxFood}</div>
+          <div className="button-row">{'consumed food per second: '+ foodConsumedPerSecond}</div>
+          <div className="button-row">{'elapsed time: '+ getElapsedTime(timestamp)}</div>
+          <div className="button-row">{'remaining food: ' +getFood(timestamp,maxFood,foodConsumedPerSecond)}</div>
+          <div className="button-row">{renderCharacter(getFood(timestamp,maxFood,foodConsumedPerSecond))}</div>
+          <button onClick={disconnect} className="button-row">
+            Disconnect
+          </button>
+        </>
+      )}
+      </div>
     </div>
   );
 }
+
+function renderCharacter(health){
+  if(health>100){
+    return ':)'
+  }else if(health<=100 && health >50){
+    return ':|'
+  }else if(health<=50 && health >0){
+    return ':('
+  }else{
+    return 'RIP'
+  }
+}
+
+function getFood(timestamp, maxFood, foodConsumedPerSecond){
+  let remainingHealth = maxFood - foodConsumedPerSecond*(getElapsedTime(timestamp));
+  return remainingHealth > 0 ? remainingHealth : 0;
+}
+
+function getElapsedTime(timestamp){
+  let lastFed = new Date(0);
+  lastFed.setUTCSeconds(timestamp);
+  let currentDateTime = new Date();
+  let elapsedTime = Math.floor((currentDateTime.getTime()-lastFed.getTime())/1000);
+  return elapsedTime;
+}
+
+function utcToDate(elapsedTime){
+  var d = new Date(0);
+  d.setUTCSeconds(elapsedTime)
+  // return 'last updated: ' + d.toDateString()
+  return 'last updated: ' + d.toString()
+}
+
 
 export default App;
