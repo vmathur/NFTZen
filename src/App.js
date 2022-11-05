@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Magic } from "magic-sdk";
 import { ConnectExtension } from "@magic-ext/connect";
 import Web3 from "web3";
-import {abi} from "./abi"
+import {abi} from "./contract/abi"
 
 const magic = new Magic("pk_live_73AAE8A5F81B1CF3", {
   network: "goerli",
