@@ -101,7 +101,7 @@ function App() {
           <div className="button-row">{utcToDate(timestamp)}</div>
           <div className="button-row">{'Max food: '+ maxFood}</div>
           <div className="button-row">{'Consumed food per second: '+ foodConsumedPerSecond}</div>
-          <div className="button-row">{'Elapsed time: '+ getElapsedTime(timestamp)}</div>
+          {/* <div className="button-row">{'Elapsed time: '+ getElapsedTime(timestamp)}</div> */}
           <div className="button-row">{'Remaining food: ' +food}</div>
           <div className="button-row">{renderCharacter(getFood(timestamp,maxFood,foodConsumedPerSecond))}</div>
           <button onClick={disconnect} className="button-row">
@@ -142,7 +142,7 @@ function getElapsedTime(timestamp){
 function utcToDate(elapsedTime){
   var d = new Date(0);
   d.setUTCSeconds(elapsedTime)
-  return 'last updated: ' + d.toString()
+  return 'Last fed: ' + d.toString()
 }
 
 
