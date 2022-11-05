@@ -11,32 +11,39 @@ const magic = new Magic("pk_live_73AAE8A5F81B1CF3", {
   extensions: [new ConnectExtension()]
 });
 const web3 = new Web3(magic.rpcProvider);
-
 const contractAddress ='0x63f8bCD03fBDD1cEB92B8469A91de8996306Dd74'
-console.log(magic)
-console.log(magic.rpcProvider)
+
 
 function App() {
   const [account, setAccount] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [timestamp, setTimestamp] = useState('loading...');
-  const maxFood = 200;
+  const [food, setFood] = useState(null);
+  const maxFood = 150;
   const foodConsumedPerSecond = 2;
 
   useEffect(() => {
-    console.log('mounted')
+    console.log('Mounted')
     getTimestamp();
   },[]);
 
+  useEffect(() => {    
+    const intervalId = setInterval(() => {
+      let latestFood = getFood(timestamp, maxFood, foodConsumedPerSecond)
+      setFood(latestFood)
+    }, 1000);
+    return () => clearInterval(intervalId);
+  }, [food, timestamp]);
+
   const getTimestamp = async () => {
-    console.log('about to get')
+    console.log('About to fetch latest feed date')
     const contract = new web3.eth.Contract(abi, contractAddress);
     contract.methods.lastUpdated().call().then(setTimestamp)
     console.log('updated')
   }
 
   const updateTimestamp = async () => {
-    console.log('calling contract')
+    console.log('calling feed contract')
     setIsUpdating(true)
     const contract = new web3.eth.Contract(abi, contractAddress);
     const receipt = await contract.methods.update().send({ from: account });
@@ -87,15 +94,15 @@ function App() {
           <button onClick={showWallet} className="button-row">
             Show Wallet
           </button>
-          {!isUpdating && ( 
+          {!isUpdating ? ( 
           <button onClick={updateTimestamp} className="button-row">
             Feed
-          </button>)}
+          </button>) : (<div>Loading...</div>)}
           <div className="button-row">{utcToDate(timestamp)}</div>
-          <div className="button-row">{'max food: '+ maxFood}</div>
-          <div className="button-row">{'consumed food per second: '+ foodConsumedPerSecond}</div>
-          <div className="button-row">{'elapsed time: '+ getElapsedTime(timestamp)}</div>
-          <div className="button-row">{'remaining food: ' +getFood(timestamp,maxFood,foodConsumedPerSecond)}</div>
+          <div className="button-row">{'Max food: '+ maxFood}</div>
+          <div className="button-row">{'Consumed food per second: '+ foodConsumedPerSecond}</div>
+          <div className="button-row">{'Elapsed time: '+ getElapsedTime(timestamp)}</div>
+          <div className="button-row">{'Remaining food: ' +food}</div>
           <div className="button-row">{renderCharacter(getFood(timestamp,maxFood,foodConsumedPerSecond))}</div>
           <button onClick={disconnect} className="button-row">
             Disconnect
@@ -135,7 +142,6 @@ function getElapsedTime(timestamp){
 function utcToDate(elapsedTime){
   var d = new Date(0);
   d.setUTCSeconds(elapsedTime)
-  // return 'last updated: ' + d.toDateString()
   return 'last updated: ' + d.toString()
 }
 
