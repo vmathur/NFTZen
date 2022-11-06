@@ -103,7 +103,8 @@ function App() {
           <div className="button-row">{'Consumed food per second: '+ foodConsumedPerSecond}</div>
           {/* <div className="button-row">{'Elapsed time: '+ getElapsedTime(timestamp)}</div> */}
           <div className="button-row">{'Remaining food: ' +food}</div>
-          <div className="button-row">{renderCharacter(getFood(timestamp,maxFood,foodConsumedPerSecond))}</div>
+          <div className="button-row">{'Stats: '+renderCharacter(getFood(timestamp,maxFood,foodConsumedPerSecond))}</div>
+          <a className="button-row" href="https://goerli.etherscan.io/address/0x63f8bCD03fBDD1cEB92B8469A91de8996306Dd74">contract</a>
           <button onClick={disconnect} className="button-row">
             Disconnect
           </button>
