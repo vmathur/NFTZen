@@ -1,44 +1,116 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
-import "@openzeppelin/contracts/utils/Base64.sol";
+import "@openzeppelin/contracts@4.8.0/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts@4.8.0/token/ERC721/extensions/ERC721Burnable.sol";
+import "@openzeppelin/contracts@4.8.0/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin/contracts@4.8.0/utils/Counters.sol";
+import "@openzeppelin/contracts@4.8.0/utils/Strings.sol";
 
-contract NFTZen is ERC721URIStorage  {
-    using Strings for uint256;
+contract NFTzen is ERC721, ERC721Enumerable, ERC721Burnable {
     using Counters for Counters.Counter;
-    Counters.Counter private _tokenIds;
+    using Strings for uint256;
+
+    Counters.Counter private _tokenIdCounter;
+    uint256[] private allTokenIds;
 
     mapping(uint256 => uint256) public tokenIdToLastFed;
-    mapping (address => uint256) private addressToTokenId;
 
-    function getLastFed() public view returns (string memory) {
-        uint256 currentTokenId = addressToTokenId[msg.sender];
-        uint256 lastFed = tokenIdToLastFed[currentTokenId];
-        return lastFed.toString();
+
+    constructor() ERC721("NFTzen", "Zen") {}
+
+    function mint() public returns (uint256){
+        uint256 tokenId = _tokenIdCounter.current();
+        _tokenIdCounter.increment();
+        _safeMint(msg.sender, tokenId);
+        allTokenIds.push(tokenId);
+        tokenIdToLastFed[tokenId] = block.timestamp;
+        return tokenId;
     }
 
-    function mint() public {
-        _tokenIds.increment();
-        uint256 newTokenId = _tokenIds.current();
-        _safeMint(msg.sender, newTokenId);
-        addressToTokenId[msg.sender] = newTokenId;
-        tokenIdToLastFed[newTokenId] = block.timestamp;
-    }
-
-    function feed() public returns (string memory){
+    function feed(uint256 tokenId) public returns (string memory){
         uint256 newLastFed =  block.timestamp;
-        uint256 currentTokenId = addressToTokenId[msg.sender];
 
-        require(_exists(currentTokenId), "Please use an existing token");
-        require(ownerOf(currentTokenId) == msg.sender, "You must own this token to feed it");
+        require(_exists(tokenId), "Please use an existing token");
+        require(ownerOf(tokenId) == msg.sender, "You must own this token to feed it");
         
-        tokenIdToLastFed[currentTokenId] = newLastFed;
+        tokenIdToLastFed[tokenId] = newLastFed;
         return newLastFed.toString();
     }
 
-    constructor() ERC721 ("NFTZen", "CBTLS"){
+    function burn(uint256 tokenId) public override {
+        require(_exists(tokenId), "Please use an existing token");
+        require(ownerOf(tokenId) == msg.sender, "You must own this token to feed it");
+        removeByValue(tokenId);
+        _burn(tokenId);
+    }
+
+    function burnToken(uint256 tokenId) public {
+        removeByValue(tokenId);
+        _burn(tokenId);
+    }
+
+    function findElement(uint value) private view returns(uint) {
+        uint i = 0;
+        while (allTokenIds[i] != value) {
+            i++;
+        }
+        return i;
+    }
+
+    function removeByValue(uint value) private {
+        uint i = findElement(value);
+        removeByIndex(i);
+    }
+
+    function removeByIndex(uint i) private {
+        while (i<allTokenIds.length-1) {
+            allTokenIds[i] = allTokenIds[i+1];
+            i++;
+        }
+        allTokenIds.pop();
+    }
+
+    function getLastFed(uint256 tokenId) public view returns (string memory) {
+        uint256 lastFed = tokenIdToLastFed[tokenId];
+        return lastFed.toString();
+    }
+
+    function getTotalCount() public view returns (string memory) {
+        uint256 totalCount =  ERC721Enumerable.totalSupply();
+        return totalCount.toString();
+    }
+
+    function getAllTokenIds() public view returns (uint256[] memory) {
+        return allTokenIds;
+    }
+
+    function getAllTokens() public view returns (uint256[] memory){
+        uint256 length = allTokenIds.length;
+        uint256[] memory itemList = new uint256[](length);
+
+        for (uint256 i=0; i < length; i++){
+            uint256 tokenId = allTokenIds[i];
+            uint256 lastFed = tokenIdToLastFed[tokenId];
+            itemList[i] = lastFed;
+        }
+        return itemList;    
+    }
+
+
+    function _beforeTokenTransfer(address from, address to, uint256 tokenId, uint256 batchSize)
+        internal
+        override(ERC721, ERC721Enumerable)
+    {
+        super._beforeTokenTransfer(from, to, tokenId, batchSize);
+    }
+
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override(ERC721, ERC721Enumerable)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
     }
 }
