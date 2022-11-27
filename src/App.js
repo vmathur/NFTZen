@@ -11,13 +11,13 @@ const magic = new Magic("pk_live_73AAE8A5F81B1CF3", {
   extensions: [new ConnectExtension()]
 });
 const web3 = new Web3(magic.rpcProvider);
-// const contractAddress ='0x63f8bCD03fBDD1cEB92B8469A91de8996306Dd74'
-const contractAddress ='0x9B7e0a87B7a7f1E3f2109A0C260E36Ee5fD19432'
+const contractAddress ='0x4F2200E53F90fDFd1E2ebcD05A221596bc545897'
 
 function App() {
   const [account, setAccount] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [citizens, setCitizens] = useState([]);
+  const [owned, setOwned] = useState([]);
 
   useEffect(() => {
     console.log('Mounted')
@@ -31,6 +31,14 @@ function App() {
     console.log('updated')
   }
 
+  const getOwnedCitizens = async (account) => {
+    console.log('About to fetch users citizens')
+    const contract = new web3.eth.Contract(abi, contractAddress);
+    console.log(account)
+    let receupt = await contract.methods.getAllOwnedTokenIDs().call({ from: account }).then(setOwned);
+    console.log('updated')
+  }
+
   const mint = async () => {
     console.log('calling mint contract')
     setIsUpdating(true)
@@ -39,6 +47,7 @@ function App() {
     console.log(receipt)
     setIsUpdating(false)
     getCitizens();
+    getOwnedCitizens(account);
   };
 
   const feed = async (tokenId) => {
@@ -67,6 +76,7 @@ function App() {
       .then((accounts) => {
         console.log(accounts)
         setAccount(accounts?.[0]);
+        getOwnedCitizens(accounts?.[0]);
       })
       .catch((error) => {
         console.log(error);
@@ -103,11 +113,11 @@ function App() {
           <div><button onClick={showWallet} className="wallet-button">
             Show Wallet
           </button></div>
-          {!isUpdating ? ( 
+          {!isUpdating || citizens.length<=4 ? ( 
           <div><button onClick={mint} className="citizen-button">
             Mint
           </button></div>) : (<div>Loading...</div>)}
-          <div className="citizens-container">{renderCitizens(citizens, feed, clean)}</div>
+          <div className="citizens-container">{renderCitizens(citizens, owned, feed, clean)}</div>
           <div><a className="button-row" href={"https://goerli.etherscan.io/address/"+contractAddress}>See contract</a></div>
           <div><button onClick={disconnect} className="wallet-button">
             Disconnect
@@ -119,12 +129,10 @@ function App() {
   );
 }
 
-function renderCitizens(citizens, feed, clean){
-  console.log(feed)
+function renderCitizens(citizens, owned, feed, clean){
   if(citizens.length===0){
     return ''
   }
-
   let mappedCitizens = citizens.map((citizen, i) => {
     return <div className="citizen-container">
           <div>
@@ -133,8 +141,9 @@ function renderCitizens(citizens, feed, clean){
             <div><b>Last fed: </b>{utcToDate(citizen[1])}</div>
             <div><b>Feed by: </b>{utcToDate(parseInt(citizen[1])+parseInt(citizen[2]))}</div>
             <div><b>Status: </b>{status(parseInt(citizen[1]),parseInt(citizen[2]))}</div>
+            {owned.includes(citizen[0]) ? '*you own this NFT' : ''}
           </div>
-          <button className="citizen-button" onClick={(e)=>feed(citizen[0])}>feed</button>
+          {owned.includes(citizen[0]) ? <button className="citizen-button" onClick={(e)=>feed(citizen[0])}>feed</button > : ''}
           <button className="citizen-button" onClick={(e)=>clean(citizen[0])}>clean</button>
         </div>;
   });
@@ -146,9 +155,9 @@ function status(lastFedTime, maxTime){
   let elapsedTime = getElapsedTime(lastFedTime);
   let health = Math.floor( (maxTime - elapsedTime)/3600)
 
-  if(health>24){
+  if(health>20){
     return '=)'
-  }else if(health<=24 && health >12){
+  }else if(health<=20 && health >12){
     return '=|'
   }else if(health<=12 && health >0){
     return '=('
