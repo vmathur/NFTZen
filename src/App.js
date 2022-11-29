@@ -13,6 +13,8 @@ const magic = new Magic("pk_live_73AAE8A5F81B1CF3", {
 const web3 = new Web3(magic.rpcProvider);
 const contractAddress ='0x4F2200E53F90fDFd1E2ebcD05A221596bc545897'
 
+const animalMapping = ['monkey', 'penguin', 'dog', 'turtle']
+
 function App() {
   const [account, setAccount] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -98,9 +100,6 @@ function App() {
 
   return (
     <div className="App">
-      <div className="headline">
-        NFTZen
-      </div>
       <div>
       {!account && (
         <button onClick={login} className="wallet-button">
@@ -108,6 +107,9 @@ function App() {
         </button>
       )}
 
+      <div className="headline">
+        NFTZen
+      </div>
       {account && (
         <>
           <div><button onClick={showWallet} className="wallet-button">
@@ -134,26 +136,32 @@ function renderCitizens(citizens, owned, feed, clean){
     return ''
   }
   let mappedCitizens = citizens.map((citizen, i) => {
+    let canClean = getHealth(parseInt(citizen[1]), parseInt(citizen[2])) < 0 ? true: false;
+    let isOwner = owned.includes(citizen[0]);
     return <div className="citizen-container">
           <div>
             <div><b>ID: </b>{citizen[0]}</div>
-            <div><b>Animal: </b>{citizen[3]}</div>
-            <div><b>Last fed: </b>{utcToDate(citizen[1])}</div>
-            <div><b>Feed by: </b>{utcToDate(parseInt(citizen[1])+parseInt(citizen[2]))}</div>
-            <div><b>Status: </b>{status(parseInt(citizen[1]),parseInt(citizen[2]))}</div>
-            {owned.includes(citizen[0]) ? '*you own this NFT' : ''}
+            <div><b>Animal: </b>{animalMapping[citizen[3]]}</div>
+            <div><b>Status: </b>{renderStatus(parseInt(citizen[1]),parseInt(citizen[2]))}</div>
+            <div><i>Feed by: </i>{utcToDate(parseInt(citizen[1])+parseInt(citizen[2]))}</div>
+            {isOwner ? '*you own this NFT' : ''}
           </div>
-          {owned.includes(citizen[0]) ? <button className="citizen-button" onClick={(e)=>feed(citizen[0])}>feed</button > : ''}
-          <button className="citizen-button" onClick={(e)=>clean(citizen[0])}>clean</button>
+          {isOwner ? <button className="citizen-button" onClick={(e)=>feed(citizen[0])}>feed</button > : ''}
+          {canClean ? <button className="citizen-button" onClick={(e)=>clean(citizen[0])}>remove</button> : ''}
         </div>;
   });
 
   return mappedCitizens;
 }
 
-function status(lastFedTime, maxTime){
+function getHealth(lastFedTime, maxTime){
   let elapsedTime = getElapsedTime(lastFedTime);
   let health = Math.floor( (maxTime - elapsedTime)/3600)
+  return health;
+}
+
+function renderStatus(lastFedTime, maxTime){
+  let health = getHealth(lastFedTime, maxTime)
 
   if(health>20){
     return '=)'
@@ -177,7 +185,7 @@ function getElapsedTime(lastFedTime){
 function utcToDate(elapsedTime){
   var d = new Date(0);
   d.setUTCSeconds(elapsedTime)
-  return d.toGMTString()
+  return d.toLocaleString()
 }
 
   //use this if you want a live ticker

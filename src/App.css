@@ -41,7 +41,7 @@
   border-radius: 5px;
   border: none;
   color: white;
-  padding: 5px;
+  padding: 7px;
   text-align: center;
   text-decoration: none;
   margin: 4px 2px;
@@ -51,7 +51,8 @@
 .citizen-button {
   border-radius: 5px;
   border: none;
-  padding: 5px;
+  color: gray;
+  padding: 7px;
   text-align: center;
   text-decoration: none;
   margin: 4px 2px;
@@ -63,5 +64,5 @@
 }
 
 .citizen-container{
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 }
