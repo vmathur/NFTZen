@@ -22,7 +22,6 @@ function App() {
   const [owned, setOwned] = useState([]);
 
   useEffect(() => {
-    console.log('Mounted')
     getCitizens();
   },[]);
 
@@ -36,8 +35,7 @@ function App() {
   const getOwnedCitizens = async (account) => {
     console.log('About to fetch users citizens')
     const contract = new web3.eth.Contract(abi, contractAddress);
-    console.log(account)
-    let receupt = await contract.methods.getAllOwnedTokenIDs().call({ from: account }).then(setOwned);
+    await contract.methods.getAllOwnedTokenIDs().call({ from: account }).then(setOwned);
     console.log('updated')
   }
 
@@ -146,7 +144,7 @@ function renderCitizens(citizens, owned, feed, clean){
             <div><i>Feed by: </i>{utcToDate(parseInt(citizen[1])+parseInt(citizen[2]))}</div>
             {isOwner ? '*you own this NFT' : ''}
           </div>
-          {isOwner ? <button className="citizen-button" onClick={(e)=>feed(citizen[0])}>feed</button > : ''}
+          {isOwner && !canClean? <button className="citizen-button" onClick={(e)=>feed(citizen[0])}>feed</button > : ''}
           {canClean ? <button className="citizen-button" onClick={(e)=>clean(citizen[0])}>remove</button> : ''}
         </div>;
   });
