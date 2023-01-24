@@ -5,7 +5,10 @@ import { ConnectExtension } from "@magic-ext/connect";
 import Web3 from "web3";
 import {abi} from "./contract/abi"
 
-const magic = new Magic("pk_live_73AAE8A5F81B1CF3", {
+// const magicPublicKey = 'pk_live_73AAE8A5F81B1CF3'
+const magicPublicKey = 'pk_live_165E2D9080CA39EB'
+
+const magic = new Magic(magicPublicKey, {
   network: "goerli",
   locale: "en_US",
   extensions: [new ConnectExtension()]
@@ -106,7 +109,7 @@ function App() {
       )}
 
       <div className="headline">
-        NFTZen
+        NFTZen 2.0
       </div>
       {account && (
         <>
